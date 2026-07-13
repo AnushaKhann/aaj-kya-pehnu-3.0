@@ -13,33 +13,27 @@ __pycache__/
 .env
 .venv/
 venv/
+.envrc
 
-# Conda
-*.conda
+# Dataset
+data/raw/
+data/processed/
+data/cache/
 
-# Models
+# Keep folder structure
+!data/
+!data/README.md
+
+# Model Checkpoints
+checkpoints/
 *.pth
 *.pt
 *.ckpt
 
 # Logs
 logs/
+wandb/
+mlruns/
 
-# Dataset
-data/raw/
-data/processed/
-data/external/
-
-# VS Code
-.vscode/
-
-# Pytest
-.pytest_cache/
-
-# Coverage
-.coverage
-htmlcov/
-
-# Temporary
-*.tmp
-*.bak
+# HuggingFace Cache
+.cache/
