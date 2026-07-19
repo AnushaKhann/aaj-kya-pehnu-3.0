@@ -4,6 +4,8 @@ dataset_builder.py
 Builds AKP dataset from Fashionpedia.
 """
 
+from sklearn.model_selection import train_test_split
+from collections import Counter
 import pandas as pd
 from tqdm import tqdm
 from pathlib import Path
@@ -32,6 +34,7 @@ class AKPDatasetBuilder:
             output_size=image_size
         )
         self.metadata_rows = []
+        self.class_counter = Counter()
         
     def create_directories(self):
 
@@ -65,6 +68,7 @@ class AKPDatasetBuilder:
                 continue
 
             akp_category = map_category(category)
+            self.class_counter[akp_category] += 1
 
             bbox = objects["bbox"][object_index]
 
@@ -139,9 +143,73 @@ class AKPDatasetBuilder:
                 index
             )
         metadata_df = pd.DataFrame(self.metadata_rows)
+        # Build a consistent label mapping
+        class_names = sorted(metadata_df["category"].unique())
+
+        class_mapping = {
+            class_name: idx
+            for idx, class_name in enumerate(class_names)
+        }
+        
+        with open(
+            self.output_dir / "classes.json",
+            "w"
+        ) as f:
+            json.dump(
+                class_mapping,
+                f,
+                indent=4
+            )
 
         metadata_df.to_csv(
             self.output_dir / "metadata.csv",
             index=False
         )
+        
+        category_counts = metadata_df["category"].value_counts()
+
+        if (category_counts >= 2).all():
+
+            print("Using stratified train/validation split.")
+
+            train_df, val_df = train_test_split(
+                metadata_df,
+                test_size=0.2,
+                random_state=42,
+                stratify=metadata_df["category"]
+            )
+
+        else:
+
+            print(
+                "Some categories have fewer than 2 samples. "
+                "Falling back to random split."
+            )
+
+            train_df, val_df = train_test_split(
+                metadata_df,
+                test_size=0.2,
+                random_state=42,
+                shuffle=True
+            )
+        train_df.to_csv(
+            self.output_dir / "train.csv",
+            index=False
+        )
+
+        val_df.to_csv(
+            self.output_dir / "val.csv",
+            index=False
+        )
+        
+        stats_path = self.output_dir / "dataset_stats.json"
+
+        with open(stats_path, "w") as f:
+            json.dump(
+                dict(self.class_counter),
+                f,
+                indent=4
+            )
         print(f"\nProcessed {limit} samples.")
+        print(f"Training samples: {len(train_df)}")
+        print(f"Validation samples: {len(val_df)}")
