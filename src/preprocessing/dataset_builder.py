@@ -85,33 +85,33 @@ class AKPDatasetBuilder:
                 / filename
             )
 
-        cropped.save(image_path)
+            cropped.save(image_path)
 
-        metadata = {
-            "image_id": sample["image_id"],
-            "akp_category": akp_category,
-            "original_category": category,
-            "bbox": bbox,
-            "width": sample["width"],
-            "height": sample["height"]
-        }
-
-        metadata_path = (
-            self.output_dir
-            / "metadata"
-            / filename.replace(".jpg", ".json")
-        )
-
-        with open(metadata_path, "w") as f:
-            json.dump(metadata, f, indent=4)
-
-        self.metadata_rows.append(
-            {
-                "filename": filename,
-                "category": akp_category,
-                "image_id": sample["image_id"]
+            metadata = {
+                "image_id": sample["image_id"],
+                "akp_category": akp_category,
+                "original_category": category,
+                "bbox": bbox,
+                "width": sample["width"],
+                "height": sample["height"]
             }
-        )
+
+            metadata_path = (
+                self.output_dir
+                / "metadata"
+                / filename.replace(".jpg", ".json")
+            )
+
+            with open(metadata_path, "w") as f:
+                json.dump(metadata, f, indent=4)
+
+            self.metadata_rows.append(
+                {
+                    "filename": filename,
+                    "category": akp_category,
+                    "image_id": sample["image_id"]
+                }
+            )
                 
     def build(
         self,
@@ -130,6 +130,8 @@ class AKPDatasetBuilder:
 
         if limit is None:
             limit = len(dataset)
+        else:
+            limit = min(limit, len(dataset))
 
         for index in tqdm(
             range(limit),
